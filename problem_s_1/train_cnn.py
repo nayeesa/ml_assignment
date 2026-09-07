@@ -1,73 +1,82 @@
 """
 Pneumonia Chest X-Ray Classification using a Convolutional Neural Network (CNN)
 
-This script is a cleaned, GitHub-friendly version of the code developed in
-the accompanying Colab notebook. Update the dataset paths below to match
-your local/Colab environment before running.
+This script trains a CNN to classify pediatric chest X-ray images as
+NORMAL or PNEUMONIA.
+
+The dataset is stored in Google Drive and extracted into the Colab
+environment for training.
 """
 
-
-
-
-# ======================================================================
-# Notebook cell
-# ======================================================================import os
-
-folder = "/content/drive/MyDrive/pneumonia_cnn"
-
-print("Files in your folder:")
-for file in os.listdir(folder):
-    print(file)
+# ============================================================
+# 1. IMPORT LIBRARIES
+# ============================================================
 
 import os
-
-folder = "/content/drive/MyDrive/pneumonia_cnn"
-
-print("Files in your folder:")
-print(os.listdir(folder))
-
-import os
-
-zip_path = "/content/drive/MyDrive/pneumonia_cnn/Archive.zip"
-
-size_gb = os.path.getsize(zip_path) / (1024 ** 3)
-
-print(f"ZIP file size: {size_gb:.2f} GB")
-
+import json
 import zipfile
-import os
-
-zip_path = "/content/drive/MyDrive/pneumonia_cnn/Archive.zip"
-extract_path = "/content/chest_xray"
-
-print("Starting extraction...")
-
-with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-    zip_ref.extractall(extract_path)
-
-print("Extraction completed!")
-
-import os
-
-print("Contents of /content/chest_xray:")
-
-for item in os.listdir("/content/chest_xray"):
-    print(item)
-
 from pathlib import Path
 
-base = Path("/content/chest_xray")
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
 
-print("Searching for dataset folders...\n")
+from google.colab import drive
 
-for folder_name in ["train", "test", "val"]:
-    matches = list(base.rglob(folder_name))
+from sklearn.utils.class_weight import compute_class_weight
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+    roc_auc_score
+)
 
-    print(f"{folder_name}:")
-    for match in matches:
-        print("  ", match)
 
-from pathlib import Path
+# ============================================================
+# 2. MOUNT GOOGLE DRIVE
+# ============================================================
+
+drive.mount("/content/drive")
+
+
+# ============================================================
+# 3. DATASET PATHS
+# ============================================================
+
+# Google Drive folder containing Archive.zip
+drive_folder = "/content/drive/MyDrive/pneumonia_cnn"
+
+zip_path = os.path.join(drive_folder, "Archive.zip")
+
+# Dataset will be extracted here for faster training
+extract_path = Path("/content/chest_xray")
+
+print("Dataset ZIP:", zip_path)
+
+
+# ============================================================
+# 4. EXTRACT DATASET
+# ============================================================
+
+if not os.path.exists(zip_path):
+    raise FileNotFoundError(
+        f"Dataset ZIP file was not found at:\n{zip_path}"
+    )
+
+if not extract_path.exists():
+    print("Extracting dataset...")
+    
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(extract_path)
+    
+    print("Dataset extraction completed.")
+else:
+    print("Dataset already extracted. Skipping extraction.")
+
+
+# ============================================================
+# 5. FIND TRAIN, VALIDATION AND TEST FOLDERS
+# ============================================================
 
 base = Path("/content/chest_xray")
 
@@ -88,67 +97,63 @@ train_dir = train_matches[0]
 test_dir = test_matches[0]
 val_dir = val_matches[0]
 
+print("\nDataset directories:")
 print("Train:", train_dir)
-print("Test :", test_dir)
-print("Val  :", val_dir)
+print("Validation:", val_dir)
+print("Test:", test_dir)
 
-import os
 
-print("Training classes:")
-print(os.listdir(train_dir))
-
-print("\nTesting classes:")
-print(os.listdir(test_dir))
-
-print("\nValidation classes:")
-print(os.listdir(val_dir))
-
-from pathlib import Path
+# ============================================================
+# 6. COUNT IMAGES
+# ============================================================
 
 def count_images(folder):
+    """Count image files in each class folder."""
+    
     extensions = {".jpg", ".jpeg", ".png"}
-
     counts = {}
 
     for class_folder in folder.iterdir():
         if class_folder.is_dir():
             count = sum(
-                1 for file in class_folder.rglob("*")
+                1
+                for file in class_folder.rglob("*")
                 if file.suffix.lower() in extensions
             )
+
             counts[class_folder.name] = count
 
     return counts
 
-print("TRAIN:")
+
+print("\nTraining images:")
 print(count_images(train_dir))
 
-print("\nVALIDATION:")
+print("\nValidation images:")
 print(count_images(val_dir))
 
-print("\nTEST:")
+print("\nTesting images:")
 print(count_images(test_dir))
 
-import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
 
-from sklearn.utils.class_weight import compute_class_weight
-from sklearn.metrics import (
-    classification_report,
-    confusion_matrix,
-    roc_auc_score
-)
-
-print("TensorFlow version:", tf.__version__)
-print("GPU devices:", tf.config.list_physical_devices('GPU'))
+# ============================================================
+# 7. CONFIGURATION
+# ============================================================
 
 IMG_SIZE = (224, 224)
 BATCH_SIZE = 32
 SEED = 42
 
-print("Image size:", IMG_SIZE)
+print("\nImage size:", IMG_SIZE)
 print("Batch size:", BATCH_SIZE)
+
+print("\nTensorFlow version:", tf.__version__)
+print("GPU devices:", tf.config.list_physical_devices("GPU"))
+
+
+# ============================================================
+# 8. LOAD DATASETS
+# ============================================================
 
 train_ds = tf.keras.utils.image_dataset_from_directory(
     train_dir,
@@ -159,9 +164,6 @@ train_ds = tf.keras.utils.image_dataset_from_directory(
     seed=SEED
 )
 
-print("Training dataset loaded.")
-print("Classes:", train_ds.class_names)
-
 val_ds = tf.keras.utils.image_dataset_from_directory(
     val_dir,
     image_size=IMG_SIZE,
@@ -169,9 +171,6 @@ val_ds = tf.keras.utils.image_dataset_from_directory(
     label_mode="binary",
     shuffle=False
 )
-
-print("Validation dataset loaded.")
-print("Classes:", val_ds.class_names)
 
 test_ds = tf.keras.utils.image_dataset_from_directory(
     test_dir,
@@ -181,8 +180,15 @@ test_ds = tf.keras.utils.image_dataset_from_directory(
     shuffle=False
 )
 
-print("Test dataset loaded.")
-print("Classes:", test_ds.class_names)
+# Class names are saved before modifying the dataset pipeline.
+class_names = train_ds.class_names
+
+print("\nClasses:", class_names)
+
+
+# ============================================================
+# 9. OPTIMIZE DATA PIPELINE
+# ============================================================
 
 AUTOTUNE = tf.data.AUTOTUNE
 
@@ -192,32 +198,31 @@ test_ds = test_ds.prefetch(buffer_size=AUTOTUNE)
 
 print("Dataset pipeline optimized.")
 
-data_augmentation = tf.keras.Sequential([
-    tf.keras.layers.RandomFlip("horizontal"),
-    tf.keras.layers.RandomRotation(0.05),
-    tf.keras.layers.RandomZoom(0.10),
-], name="data_augmentation")
+
+# ============================================================
+# 10. DATA AUGMENTATION
+# ============================================================
+
+data_augmentation = tf.keras.Sequential(
+    [
+        tf.keras.layers.RandomFlip("horizontal"),
+        tf.keras.layers.RandomRotation(0.05),
+        tf.keras.layers.RandomZoom(0.10),
+    ],
+    name="data_augmentation"
+)
 
 print("Data augmentation created.")
 
-# Calculate class weights
 
-import numpy as np
-from sklearn.utils.class_weight import compute_class_weight
+# ============================================================
+# 11. CALCULATE CLASS WEIGHTS
+# ============================================================
 
-# Get class names from the dataset before prefetching
-class_names = sorted([
-    folder.name
-    for folder in train_dir.iterdir()
-    if folder.is_dir()
-])
-
-print("Classes found:", class_names)
-
-# Count images in each class
 class_counts = {}
 
 for class_name in class_names:
+
     class_folder = train_dir / class_name
 
     count = sum(
@@ -228,19 +233,23 @@ for class_name in class_names:
 
     class_counts[class_name] = count
 
+
 print("\nTraining image counts:")
+
 for class_name, count in class_counts.items():
     print(f"{class_name}: {count}")
 
-# Create labels
+
+# Create numerical labels based on the class counts.
 labels = []
 
 for class_index, class_name in enumerate(class_names):
-    labels.extend([class_index] * class_counts[class_name])
+    labels.extend(
+        [class_index] * class_counts[class_name]
+    )
 
 labels = np.array(labels)
 
-# Calculate balanced class weights
 classes = np.unique(labels)
 
 weights = compute_class_weight(
@@ -257,45 +266,102 @@ class_weights = {
 print("\nClass weights:")
 print(class_weights)
 
-model = tf.keras.Sequential([
-    tf.keras.layers.Input(shape=(224, 224, 3)),
-    data_augmentation,
-    tf.keras.layers.Rescaling(1./255),
 
-    tf.keras.layers.Conv2D(32, (3, 3), activation="relu"),
-    tf.keras.layers.MaxPooling2D(),
+# ============================================================
+# 12. BUILD CNN MODEL
+# ============================================================
 
-    tf.keras.layers.Conv2D(64, (3, 3), activation="relu"),
-    tf.keras.layers.MaxPooling2D(),
+model = tf.keras.Sequential(
+    [
+        tf.keras.layers.Input(
+            shape=(224, 224, 3)
+        ),
 
-    tf.keras.layers.Conv2D(128, (3, 3), activation="relu"),
-    tf.keras.layers.MaxPooling2D(),
+        data_augmentation,
 
-    tf.keras.layers.Conv2D(256, (3, 3), activation="relu"),
-    tf.keras.layers.MaxPooling2D(),
+        tf.keras.layers.Rescaling(1.0 / 255),
 
-    tf.keras.layers.GlobalAveragePooling2D(),
+        tf.keras.layers.Conv2D(
+            32,
+            (3, 3),
+            activation="relu"
+        ),
+        tf.keras.layers.MaxPooling2D(),
 
-    tf.keras.layers.Dense(128, activation="relu"),
-    tf.keras.layers.Dropout(0.5),
+        tf.keras.layers.Conv2D(
+            64,
+            (3, 3),
+            activation="relu"
+        ),
+        tf.keras.layers.MaxPooling2D(),
 
-    tf.keras.layers.Dense(1, activation="sigmoid")
-])
+        tf.keras.layers.Conv2D(
+            128,
+            (3, 3),
+            activation="relu"
+        ),
+        tf.keras.layers.MaxPooling2D(),
+
+        tf.keras.layers.Conv2D(
+            256,
+            (3, 3),
+            activation="relu"
+        ),
+        tf.keras.layers.MaxPooling2D(),
+
+        tf.keras.layers.GlobalAveragePooling2D(),
+
+        tf.keras.layers.Dense(
+            128,
+            activation="relu"
+        ),
+
+        tf.keras.layers.Dropout(0.5),
+
+        tf.keras.layers.Dense(
+            1,
+            activation="sigmoid"
+        )
+    ]
+)
 
 model.summary()
 
+
+# ============================================================
+# 13. COMPILE MODEL
+# ============================================================
+
 model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+    optimizer=tf.keras.optimizers.Adam(
+        learning_rate=0.0001
+    ),
+
     loss="binary_crossentropy",
+
     metrics=[
         "accuracy",
-        tf.keras.metrics.AUC(name="auc"),
-        tf.keras.metrics.Precision(name="precision"),
-        tf.keras.metrics.Recall(name="recall")
+
+        tf.keras.metrics.AUC(
+            name="auc"
+        ),
+
+        tf.keras.metrics.Precision(
+            name="precision"
+        ),
+
+        tf.keras.metrics.Recall(
+            name="recall"
+        )
     ]
 )
 
 print("Model compiled successfully.")
+
+
+# ============================================================
+# 14. TRAINING CALLBACKS
+# ============================================================
 
 early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor="val_loss",
@@ -316,7 +382,10 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(
     save_best_only=True
 )
 
-print("Callbacks created.")
+
+# ============================================================
+# 15. TRAIN MODEL
+# ============================================================
 
 EPOCHS = 15
 
@@ -332,57 +401,110 @@ history = model.fit(
     ]
 )
 
+
+# ============================================================
+# 16. PLOT TRAINING AND VALIDATION ACCURACY
+# ============================================================
+
 plt.figure(figsize=(8, 5))
 
-plt.plot(history.history["accuracy"], label="Training Accuracy")
-plt.plot(history.history["val_accuracy"], label="Validation Accuracy")
+plt.plot(
+    history.history["accuracy"],
+    label="Training Accuracy"
+)
+
+plt.plot(
+    history.history["val_accuracy"],
+    label="Validation Accuracy"
+)
 
 plt.xlabel("Epoch")
 plt.ylabel("Accuracy")
 plt.title("Training and Validation Accuracy")
 plt.legend()
 plt.grid(True)
-
 plt.show()
+
+
+# ============================================================
+# 17. PLOT TRAINING AND VALIDATION LOSS
+# ============================================================
 
 plt.figure(figsize=(8, 5))
 
-plt.plot(history.history["loss"], label="Training Loss")
-plt.plot(history.history["val_loss"], label="Validation Loss")
+plt.plot(
+    history.history["loss"],
+    label="Training Loss"
+)
+
+plt.plot(
+    history.history["val_loss"],
+    label="Validation Loss"
+)
 
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 plt.title("Training and Validation Loss")
 plt.legend()
 plt.grid(True)
-
 plt.show()
 
-test_results = model.evaluate(test_ds, verbose=1)
+
+# ============================================================
+# 18. EVALUATE MODEL ON TEST SET
+# ============================================================
+
+test_results = model.evaluate(
+    test_ds,
+    verbose=1
+)
 
 print("\nTest results:")
 
-for name, value in zip(model.metrics_names, test_results):
+for name, value in zip(
+    model.metrics_names,
+    test_results
+):
     print(f"{name}: {value:.4f}")
+
+
+# ============================================================
+# 19. GENERATE PREDICTIONS
+# ============================================================
 
 y_true = []
 y_prob = []
 
-for images, labels in test_ds:
-    probabilities = model.predict(images, verbose=0)
+for images, labels_batch in test_ds:
 
-    y_true.extend(labels.numpy().flatten())
-    y_prob.extend(probabilities.flatten())
+    probabilities = model.predict(
+        images,
+        verbose=0
+    )
+
+    y_true.extend(
+        labels_batch.numpy().flatten()
+    )
+
+    y_prob.extend(
+        probabilities.flatten()
+    )
 
 y_true = np.array(y_true)
 y_prob = np.array(y_prob)
 
+# Convert probabilities into binary predictions.
 y_pred = (y_prob >= 0.5).astype(int)
 
-print("Predictions generated.")
+print("\nPredictions generated.")
 print("Number of test images:", len(y_true))
 
-# Classification report
+
+# ============================================================
+# 20. CLASSIFICATION REPORT
+# ============================================================
+
+print("\nClassification Report:")
 
 print(
     classification_report(
@@ -392,16 +514,17 @@ print(
     )
 )
 
-cm = confusion_matrix(y_true, y_pred)
 
-print("Confusion Matrix:")
-print(cm)
+# ============================================================
+# 21. CONFUSION MATRIX
+# ============================================================
 
-# Display confusion matrix
+cm = confusion_matrix(
+    y_true,
+    y_pred
+)
 
-cm = confusion_matrix(y_true, y_pred)
-
-print("Confusion Matrix:")
+print("\nConfusion Matrix:")
 print(cm)
 
 disp = ConfusionMatrixDisplay(
@@ -410,21 +533,41 @@ disp = ConfusionMatrixDisplay(
 )
 
 disp.plot()
+
 plt.title("Confusion Matrix")
 plt.show()
 
-auc_score = roc_auc_score(y_true, y_prob)
 
-print(f"ROC-AUC: {auc_score:.4f}")
+# ============================================================
+# 22. ROC-AUC
+# ============================================================
 
-model_path = "/content/drive/MyDrive/pneumonia_cnn/pneumonia_cnn_model.keras"
+auc_score = roc_auc_score(
+    y_true,
+    y_prob
+)
+
+print(f"\nROC-AUC: {auc_score:.4f}")
+
+
+# ============================================================
+# 23. SAVE TRAINED MODEL
+# ============================================================
+
+model_path = os.path.join(
+    drive_folder,
+    "pneumonia_cnn_model.keras"
+)
 
 model.save(model_path)
 
-print("Model saved successfully!")
+print("\nModel saved successfully!")
 print(model_path)
 
-import json
+
+# ============================================================
+# 24. SAVE RESULTS
+# ============================================================
 
 results = {
     "test_accuracy": float(test_results[1]),
@@ -434,24 +577,37 @@ results = {
     "roc_auc": float(auc_score)
 }
 
-results_path = "/content/drive/MyDrive/pneumonia_cnn/results.json"
+results_path = os.path.join(
+    drive_folder,
+    "results.json"
+)
 
 with open(results_path, "w") as f:
-    json.dump(results, f, indent=4)
+    json.dump(
+        results,
+        f,
+        indent=4
+    )
 
-print("Results saved to:")
+print("\nResults saved to:")
 print(results_path)
 
-print("\nResults:")
+print("\nFinal Results:")
 print(json.dumps(results, indent=4))
 
-# Show sample predictions
 
-import matplotlib.pyplot as plt
+# ============================================================
+# 25. SHOW SAMPLE PREDICTIONS
+# ============================================================
 
-images, labels = next(iter(test_ds))
+images, labels_batch = next(
+    iter(test_ds)
+)
 
-probabilities = model.predict(images, verbose=0).flatten()
+probabilities = model.predict(
+    images,
+    verbose=0
+).flatten()
 
 plt.figure(figsize=(12, 10))
 
@@ -459,13 +615,22 @@ for i in range(min(9, len(images))):
 
     plt.subplot(3, 3, i + 1)
 
-    plt.imshow(images[i].numpy().astype("uint8"))
+    plt.imshow(
+        images[i].numpy().astype("uint8"),
+        cmap="gray"
+    )
 
-    actual = class_names[int(labels[i].numpy())]
+    actual = class_names[
+        int(labels_batch[i].numpy())
+    ]
 
-    predicted_index = int(probabilities[i] >= 0.5)
+    predicted_index = int(
+        probabilities[i] >= 0.5
+    )
 
-    predicted = class_names[predicted_index]
+    predicted = class_names[
+        predicted_index
+    ]
 
     confidence = (
         probabilities[i]
