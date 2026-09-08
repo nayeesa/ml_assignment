@@ -74,7 +74,6 @@ The model correctly classified:
 It incorrectly classified:
 * 13 Normal images as Pneumonia.
 * 169 Pneumonia images as Normal.
-*
   
 ## Limitations
 
