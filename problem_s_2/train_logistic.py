@@ -1,22 +1,12 @@
 ```python
 """
-Problem Set 02
 Bank Marketing Prediction using Logistic Regression
 
-This script:
-1. Loads the Bank Marketing dataset
-2. Performs basic data exploration
-3. Preprocesses numerical and categorical features
-4. Trains a Logistic Regression model
-5. Evaluates the model
-6. Displays a confusion matrix and ROC curve
-7. Saves the evaluation results
-
-Dataset file required:
+Dataset file need:
     bank-full.csv
 
-Place bank-full.csv in the same directory as this script.
 """
+# import libraries 
 
 import pandas as pd
 import numpy as np
@@ -40,28 +30,22 @@ from sklearn.metrics import (
     roc_curve
 )
 
-
-# ============================================================
-# 1. Load Dataset
-# ============================================================
+# load dataset
 
 df = pd.read_csv("bank-full.csv", sep=";")
 
-print("Dataset loaded successfully.")
+print("Dataset loaded.")
 print("Dataset shape:", df.shape)
 
 print("\nFirst five rows:")
 print(df.head())
 
-
-# ============================================================
-# 2. Basic Data Exploration
-# ============================================================
+# data explore
 
 print("\nDataset information:")
 df.info()
 
-print("\nDescriptive statistics:")
+print("\nstatistics:")
 print(df.describe())
 
 print("\nMissing values:")
@@ -70,13 +54,10 @@ print(df.isnull().sum())
 print("\nTarget variable counts:")
 print(df["y"].value_counts())
 
-print("\nTarget variable percentages:")
+print("\nTarget variable percent:")
 print(df["y"].value_counts(normalize=True) * 100)
 
-
-# ============================================================
-# 3. Target Variable Visualization
-# ============================================================
+# target variable
 
 plt.figure(figsize=(6, 4))
 
@@ -89,10 +70,7 @@ plt.ylabel("Number of Customers")
 plt.tight_layout()
 plt.show()
 
-
-# ============================================================
-# 4. Separate Features and Target
-# ============================================================
+# separate target and features
 
 X = df.drop("y", axis=1)
 
@@ -104,10 +82,7 @@ y = df["y"].map({
 print("\nFeatures shape:", X.shape)
 print("Target shape:", y.shape)
 
-
-# ============================================================
-# 5. Identify Feature Types
-# ============================================================
+# identify feature type
 
 categorical_features = X.select_dtypes(
     include=["object"]
@@ -123,10 +98,7 @@ print(categorical_features)
 print("\nNumerical features:")
 print(numerical_features)
 
-
-# ============================================================
-# 6. Train-Test Split
-# ============================================================
+# Train-Test split
 
 X_train, X_test, y_train, y_test = train_test_split(
     X,
@@ -136,13 +108,10 @@ X_train, X_test, y_train, y_test = train_test_split(
     stratify=y
 )
 
-print("\nTraining data:", X_train.shape)
-print("Testing data:", X_test.shape)
+print("\nTrain data:", X_train.shape)
+print("Test data:", X_test.shape)
 
-
-# ============================================================
-# 7. Preprocessing
-# ============================================================
+# preprocessing 
 
 preprocessor = ColumnTransformer(
     transformers=[
@@ -161,10 +130,7 @@ preprocessor = ColumnTransformer(
     ]
 )
 
-
-# ============================================================
-# 8. Create Logistic Regression Pipeline
-# ============================================================
+# pipeline 
 
 model = Pipeline([
     (
@@ -180,33 +146,22 @@ model = Pipeline([
     )
 ])
 
+# train model
 
-# ============================================================
-# 9. Train Model
-# ============================================================
-
-print("\nTraining Logistic Regression model...")
+print("\nTrain Logistic Regression...")
 
 model.fit(
     X_train,
     y_train
 )
 
-print("Model training completed.")
+print("Model train completed.")
 
-
-# ============================================================
-# 10. Generate Predictions
-# ============================================================
+# prediction and evaluate metrics
 
 y_pred = model.predict(X_test)
 
 y_probability = model.predict_proba(X_test)[:, 1]
-
-
-# ============================================================
-# 11. Calculate Evaluation Metrics
-# ============================================================
 
 accuracy = accuracy_score(
     y_test,
@@ -233,10 +188,7 @@ roc_auc = roc_auc_score(
     y_probability
 )
 
-
-# ============================================================
-# 12. Display Results
-# ============================================================
+# result 
 
 print("\n===== FINAL MODEL RESULTS =====")
 
@@ -246,10 +198,7 @@ print(f"Recall   : {recall:.4f}")
 print(f"F1 Score : {f1:.4f}")
 print(f"ROC-AUC  : {roc_auc:.4f}")
 
-
-# ============================================================
-# 13. Classification Report
-# ============================================================
+# report 
 
 print("\n===== CLASSIFICATION REPORT =====")
 
@@ -261,17 +210,14 @@ print(
     )
 )
 
-
-# ============================================================
-# 14. Confusion Matrix
-# ============================================================
+# Confusion matrix
 
 cm = confusion_matrix(
     y_test,
     y_pred
 )
 
-print("\n===== CONFUSION MATRIX =====")
+print("\n== CONFUSION MATRIX ==")
 print(cm)
 
 plt.figure(figsize=(6, 5))
@@ -291,10 +237,7 @@ plt.title("Confusion Matrix - Logistic Regression")
 plt.tight_layout()
 plt.show()
 
-
-# ============================================================
-# 15. ROC Curve
-# ============================================================
+#  ROC curve
 
 fpr, tpr, thresholds = roc_curve(
     y_test,
@@ -324,10 +267,7 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
-
-# ============================================================
-# 16. Save Results
-# ============================================================
+# save Results
 
 results = {
     "Model": "Logistic Regression",
@@ -348,13 +288,7 @@ results_df.to_csv(
 print("\nResults saved to:")
 print("logistic_regression_results.csv")
 
-print("\n===== RESULTS TABLE =====")
+print("\n==RESULTS TABLE ==")
 print(results_df)
 
-
-# ============================================================
-# 17. Final Message
-# ============================================================
-
-print("\nModel execution completed successfully.")
-```
+print("\nModel execution completed.")
