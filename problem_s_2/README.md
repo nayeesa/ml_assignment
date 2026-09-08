@@ -1,41 +1,13 @@
-# Problem Set 02 — Bank Marketing Prediction Using Logistic Regression
+# Bank Marketing Prediction using Logistic Regression
 
-## 1. Problem Statement
+## Objective
 
-The objective of this problem is to build a machine learning model that predicts whether a customer will subscribe to a term deposit based on information collected during a bank marketing campaign.
+first have to load and explore the Bank Marketing dataset. Performing basic data inspection and preprocessing while separate the input features from the target variable. Encode the categorical variables and scale numerical variables. Train a Logistic Regression classification model and evaluate the model using multiple classification metrics.finally Analyze the model's strengths and limitations.
 
-The target variable is `y`, which contains two possible outcomes:
+## Dataset
 
-* `yes` — the customer subscribed to a term deposit
-* `no` — the customer did not subscribe
-
-A Logistic Regression model is used to perform this binary classification task.
-
----
-
-## 2. Objective
-
-The main objectives are to:
-
-1. Load and explore the Bank Marketing dataset.
-2. Perform basic data inspection and preprocessing.
-3. Separate the input features from the target variable.
-4. Encode categorical variables.
-5. Scale numerical variables.
-6. Train a Logistic Regression classification model.
-7. Evaluate the model using multiple classification metrics.
-8. Analyze the model's strengths and limitations.
-
----
-
-## 3. Dataset
-
-The dataset used is the **Bank Marketing dataset**.
-
-It contains information about customers contacted during a bank marketing campaign.
-
+The dataset used is the **Bank Marketing dataset**. It contains information about customers contacted during a bank marketing campaign.
 The dataset contains:
-
 * **45,211 records**
 * **17 columns**
 
