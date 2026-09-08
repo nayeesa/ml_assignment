@@ -99,5 +99,6 @@ problem_set_01/
 
 1. Install the required Python packages
 2. Update the dataset paths in `train_cnn.py` according to the location of the dataset and run it.
+
 It trains the CNN, evaluates it on the test dataset, generates evaluation metrics and visualizations, and saves the trained model and results.
 
