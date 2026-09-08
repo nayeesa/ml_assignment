@@ -3,14 +3,9 @@ Pneumonia Chest X-Ray Classification using a Convolutional Neural Network (CNN)
 
 This script trains a CNN to classify pediatric chest X-ray images as
 NORMAL or PNEUMONIA.
-
-The dataset is stored in Google Drive and extracted into the Colab
-environment for training.
 """
 
-# ===========================================================
-# 1. IMPORT LIBRARIES
-# ===========================================================
+# IMPORT LIBRARIES
 
 import os
 import json
@@ -31,19 +26,12 @@ from sklearn.metrics import (
     roc_auc_score
 )
 
-
-# ============================================================
-# 2. MOUNT GOOGLE DRIVE
-# ============================================================
+# Mount google drive 
 
 drive.mount("/content/drive")
 
+# DATASET paths and extracting
 
-# ============================================================
-# 3. DATASET PATHS
-# ============================================================
-
-# Google Drive folder containing Archive.zip
 drive_folder = "/content/drive/MyDrive/pneumonia_cnn"
 
 zip_path = os.path.join(drive_folder, "Archive.zip")
@@ -52,11 +40,6 @@ zip_path = os.path.join(drive_folder, "Archive.zip")
 extract_path = Path("/content/chest_xray")
 
 print("Dataset ZIP:", zip_path)
-
-
-# ============================================================
-# 4. EXTRACT DATASET
-# ============================================================
 
 if not os.path.exists(zip_path):
     raise FileNotFoundError(
