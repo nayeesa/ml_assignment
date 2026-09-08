@@ -1,11 +1,11 @@
-# Problem Set 01 — Pneumonia Classification Using CNN
+# Pneumonia classification using convolutional neural network (CNN)
 
-## 1. Problem Statement
+## Problem Statement
 
-The objective of this problem is to develop a Convolutional Neural Network (CNN) model to classify pediatric chest X-ray images into two categories:
+The objective of this problem is to develop a Convolutional Neural Network  model to classify pediatric chest X-ray images into two categories:
 
-* Normal
-* Pneumonia
+1. Normal
+2. Pneumonia
 
 The dataset is organized into training, validation, and testing folders.
 
