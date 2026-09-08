@@ -38,22 +38,22 @@ zip_path = os.path.join(drive_folder, "Archive.zip")
 
 extract_path = Path("/content/chest_xray")
 
-print("Dataset ZIP:", zip_path)
+print("ZIP:", zip_path)
 
 if not os.path.exists(zip_path):
     raise FileNotFoundError(
-        f"Dataset ZIP file was not found at:\n{zip_path}"
+        f"ZIP was not found at:\n{zip_path}"
     )
 
 if not extract_path.exists():
-    print("Extracting dataset...")
+    print("Extracting ...")
     
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(extract_path)
     
-    print("Dataset extraction completed.")
+    print("extraction completed.")
 else:
-    print("Dataset already extracted. Skipping extraction.")
+    print("already extracted. Skip.")
 
 # find TRAIN, VALIDATION and TEST folders 
 
@@ -64,19 +64,19 @@ test_matches = list(base.rglob("test"))
 val_matches = list(base.rglob("val"))
 
 if not train_matches:
-    raise FileNotFoundError("Could not find the train folder.")
+    raise FileNotFoundError("not found train folder.")
 
 if not test_matches:
-    raise FileNotFoundError("Could not find the test folder.")
+    raise FileNotFoundError("not found test folder.")
 
 if not val_matches:
-    raise FileNotFoundError("Could not find the val folder.")
+    raise FileNotFoundError("not found val folder.")
 
 train_dir = train_matches[0]
 test_dir = test_matches[0]
 val_dir = val_matches[0]
 
-print("\nDataset directories:")
+print("\nDataset :")
 print("Train:", train_dir)
 print("Validation:", val_dir)
 print("Test:", test_dir)
@@ -102,13 +102,13 @@ def count_images(folder):
     return counts
 
 
-print("\nTraining images:")
+print("\nTrain images:")
 print(count_images(train_dir))
 
 print("\nValidation images:")
 print(count_images(val_dir))
 
-print("\nTesting images:")
+print("\nTest images:")
 print(count_images(test_dir))
 
 # configuration 
@@ -162,7 +162,7 @@ train_ds = train_ds.prefetch(buffer_size=AUTOTUNE)
 val_ds = val_ds.prefetch(buffer_size=AUTOTUNE)
 test_ds = test_ds.prefetch(buffer_size=AUTOTUNE)
 
-print("Dataset pipeline optimized.")
+print("pipeline optimized.")
 
 data_augmentation = tf.keras.Sequential(
     [
@@ -173,7 +173,7 @@ data_augmentation = tf.keras.Sequential(
     name="data_augmentation"
 )
 
-print("Data augmentation created.")
+print("augmentation created.")
 
 # class weight 
 
@@ -192,7 +192,7 @@ for class_name in class_names:
     class_counts[class_name] = count
 
 
-print("\nTraining image counts:")
+print("\nTrain image counts:")
 
 for class_name, count in class_counts.items():
     print(f"{class_name}: {count}")
@@ -504,7 +504,7 @@ print(results_path)
 print("\nFinal Results:")
 print(json.dumps(results, indent=4))
 
-# prediction 
+# sample prediction 
 
 images, labels_batch = next(
     iter(test_ds)
