@@ -36,7 +36,6 @@ drive_folder = "/content/drive/MyDrive/pneumonia_cnn"
 
 zip_path = os.path.join(drive_folder, "Archive.zip")
 
-# Dataset will be extracted here for faster training
 extract_path = Path("/content/chest_xray")
 
 print("Dataset ZIP:", zip_path)
@@ -56,10 +55,7 @@ if not extract_path.exists():
 else:
     print("Dataset already extracted. Skipping extraction.")
 
-
-# ============================================================
-# 5. FIND TRAIN, VALIDATION AND TEST FOLDERS
-# ============================================================
+# find TRAIN, VALIDATION and TEST folders 
 
 base = Path("/content/chest_xray")
 
@@ -86,10 +82,7 @@ print("Validation:", val_dir)
 print("Test:", test_dir)
 
 
-# ============================================================
-# 6. COUNT IMAGES
-# ============================================================
-
+# image count
 def count_images(folder):
     """Count image files in each class folder."""
     
@@ -118,10 +111,7 @@ print(count_images(val_dir))
 print("\nTesting images:")
 print(count_images(test_dir))
 
-
-# ============================================================
-# 7. CONFIGURATION
-# ============================================================
+# configuration 
 
 IMG_SIZE = (224, 224)
 BATCH_SIZE = 32
@@ -133,10 +123,7 @@ print("Batch size:", BATCH_SIZE)
 print("\nTensorFlow version:", tf.__version__)
 print("GPU devices:", tf.config.list_physical_devices("GPU"))
 
-
-# ============================================================
-# 8. LOAD DATASETS
-# ============================================================
+# load dataset
 
 train_ds = tf.keras.utils.image_dataset_from_directory(
     train_dir,
@@ -163,15 +150,11 @@ test_ds = tf.keras.utils.image_dataset_from_directory(
     shuffle=False
 )
 
-# Class names are saved before modifying the dataset pipeline.
 class_names = train_ds.class_names
 
 print("\nClasses:", class_names)
 
-
-# ============================================================
-# 9. OPTIMIZE DATA PIPELINE
-# ============================================================
+# optimize pipeline and augmentation
 
 AUTOTUNE = tf.data.AUTOTUNE
 
@@ -180,11 +163,6 @@ val_ds = val_ds.prefetch(buffer_size=AUTOTUNE)
 test_ds = test_ds.prefetch(buffer_size=AUTOTUNE)
 
 print("Dataset pipeline optimized.")
-
-
-# ============================================================
-# 10. DATA AUGMENTATION
-# ============================================================
 
 data_augmentation = tf.keras.Sequential(
     [
@@ -197,10 +175,7 @@ data_augmentation = tf.keras.Sequential(
 
 print("Data augmentation created.")
 
-
-# ============================================================
-# 11. CALCULATE CLASS WEIGHTS
-# ============================================================
+# class weight 
 
 class_counts = {}
 
@@ -222,8 +197,6 @@ print("\nTraining image counts:")
 for class_name, count in class_counts.items():
     print(f"{class_name}: {count}")
 
-
-# Create numerical labels based on the class counts.
 labels = []
 
 for class_index, class_name in enumerate(class_names):
@@ -249,11 +222,7 @@ class_weights = {
 print("\nClass weights:")
 print(class_weights)
 
-
-# ============================================================
-# 12. BUILD CNN MODEL
-# ============================================================
-
+# cnn
 model = tf.keras.Sequential(
     [
         tf.keras.layers.Input(
@@ -310,10 +279,7 @@ model = tf.keras.Sequential(
 
 model.summary()
 
-
-# ============================================================
-# 13. COMPILE MODEL
-# ============================================================
+# compile
 
 model.compile(
     optimizer=tf.keras.optimizers.Adam(
@@ -341,11 +307,6 @@ model.compile(
 
 print("Model compiled successfully.")
 
-
-# ============================================================
-# 14. TRAINING CALLBACKS
-# ============================================================
-
 early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor="val_loss",
     patience=3,
@@ -365,10 +326,7 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(
     save_best_only=True
 )
 
-
-# ============================================================
-# 15. TRAIN MODEL
-# ============================================================
+# train
 
 EPOCHS = 15
 
@@ -384,11 +342,7 @@ history = model.fit(
     ]
 )
 
-
-# ============================================================
-# 16. PLOT TRAINING AND VALIDATION ACCURACY
-# ============================================================
-
+# plot train and validation accuracy & loss
 plt.figure(figsize=(8, 5))
 
 plt.plot(
@@ -407,11 +361,6 @@ plt.title("Training and Validation Accuracy")
 plt.legend()
 plt.grid(True)
 plt.show()
-
-
-# ============================================================
-# 17. PLOT TRAINING AND VALIDATION LOSS
-# ============================================================
 
 plt.figure(figsize=(8, 5))
 
@@ -432,11 +381,7 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
-
-# ============================================================
-# 18. EVALUATE MODEL ON TEST SET
-# ============================================================
-
+# evaluate on train set
 test_results = model.evaluate(
     test_ds,
     verbose=1
@@ -451,9 +396,7 @@ for name, value in zip(
     print(f"{name}: {value:.4f}")
 
 
-# ============================================================
-# 19. GENERATE PREDICTIONS
-# ============================================================
+# generate prediction
 
 y_true = []
 y_prob = []
@@ -482,10 +425,7 @@ y_pred = (y_prob >= 0.5).astype(int)
 print("\nPredictions generated.")
 print("Number of test images:", len(y_true))
 
-
-# ============================================================
-# 20. CLASSIFICATION REPORT
-# ============================================================
+#classification report
 
 print("\nClassification Report:")
 
@@ -497,10 +437,7 @@ print(
     )
 )
 
-
-# ============================================================
-# 21. CONFUSION MATRIX
-# ============================================================
+# confusion matrix
 
 cm = confusion_matrix(
     y_true,
@@ -520,10 +457,7 @@ disp.plot()
 plt.title("Confusion Matrix")
 plt.show()
 
-
-# ============================================================
-# 22. ROC-AUC
-# ============================================================
+#  ROC-AUC
 
 auc_score = roc_auc_score(
     y_true,
@@ -532,10 +466,7 @@ auc_score = roc_auc_score(
 
 print(f"\nROC-AUC: {auc_score:.4f}")
 
-
-# ============================================================
-# 23. SAVE TRAINED MODEL
-# ============================================================
+# save train model and result
 
 model_path = os.path.join(
     drive_folder,
@@ -546,11 +477,6 @@ model.save(model_path)
 
 print("\nModel saved successfully!")
 print(model_path)
-
-
-# ============================================================
-# 24. SAVE RESULTS
-# ============================================================
 
 results = {
     "test_accuracy": float(test_results[1]),
@@ -578,10 +504,7 @@ print(results_path)
 print("\nFinal Results:")
 print(json.dumps(results, indent=4))
 
-
-# ============================================================
-# 25. SHOW SAMPLE PREDICTIONS
-# ============================================================
+# prediction 
 
 images, labels_batch = next(
     iter(test_ds)
